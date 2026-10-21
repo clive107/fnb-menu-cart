@@ -49,3 +49,6 @@ app.*.map.json
 
 # FVM Version Cache
 .fvm/
+
+# Local editor settings (points at the FVM SDK, which reviewers may not have)
+.vscode/settings.json
