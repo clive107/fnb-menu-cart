@@ -1,5 +1,5 @@
 name: fnb_menu_cart
-description: "A new Flutter project."
+description: "F&B menu browsing and cart (take-home assessment)."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -19,7 +19,9 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.13.4
+  # The assessment's minimum is Flutter 3.38.10, which ships Dart 3.10.9.
+  sdk: ^3.10.0
+  flutter: ">=3.38.10"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
