@@ -1,34 +1,55 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fnb_menu_cart/configs/themes/app_colors.dart';
 import 'package:fnb_menu_cart/configs/themes/styles.dart';
 import 'package:fnb_menu_cart/screens/cart/cart_screen.dart';
 import 'package:fnb_menu_cart/screens/menu/menu_screen.dart';
+import 'package:fnb_menu_cart/services/app/api_client.dart';
 import 'package:fnb_menu_cart/utils/app/app_routes.dart';
+import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 
 void runMainApp() {
-  runApp(const MyApp());
+  final Logger logger = Logger();
+  // One client for the app's lifetime, so connections are reused.
+  final ApiClient apiClient = ApiClient(
+    httpClient: http.Client(),
+    logger: logger,
+  );
+
+  runApp(MyApp(apiClient: apiClient, logger: logger));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final ApiClient apiClient;
+  final Logger logger;
+
+  const MyApp({super.key, required this.apiClient, required this.logger});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      darkTheme: _buildTheme(Brightness.dark),
-      debugShowCheckedModeBanner: false,
-      initialRoute: AppRoutes.menu,
-      routes: {
-        /* Section - Menu screen */
-        AppRoutes.menu: (context) => const MenuScreen(),
-        /* Section - Cart screen */
-        AppRoutes.cart: (context) => const CartScreen(),
-      },
-      theme: _buildTheme(Brightness.light),
-      // Follows the device setting, so switching dark mode on the device
-      // switches the app's theme.
-      themeMode: ThemeMode.system,
-      title: 'F&B Menu',
+    /* Section - MultiRepositoryProvider */
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<Logger>.value(value: logger),
+        RepositoryProvider<ApiClient>.value(value: apiClient),
+      ],
+      child: MaterialApp(
+        darkTheme: _buildTheme(Brightness.dark),
+        debugShowCheckedModeBanner: false,
+        initialRoute: AppRoutes.menu,
+        routes: {
+          /* Section - Menu screen */
+          AppRoutes.menu: (context) => const MenuScreen(),
+          /* Section - Cart screen */
+          AppRoutes.cart: (context) => const CartScreen(),
+        },
+        theme: _buildTheme(Brightness.light),
+        // Follows the device setting, so switching dark mode on the device
+        // switches the app's theme.
+        themeMode: ThemeMode.system,
+        title: 'F&B Menu',
+      ),
     );
   }
 }
