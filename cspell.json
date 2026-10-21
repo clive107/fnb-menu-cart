@@ -5,6 +5,7 @@
         "dummyjson",
         "equatable",
         "fvmrc",
-        "mocktail"
+        "mocktail",
+        "strikethrough"
     ]
 }

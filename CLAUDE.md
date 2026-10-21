@@ -57,8 +57,10 @@ Always declare an explicit type — never use `var` or bare `final`/`const` with
 
 # Theme & Text Styles
 
-- Style text by overriding the `TextTheme` slots and component themes in the app theme, then use
-  `Theme.of(context).textTheme.<slot>`. Don't create custom text style classes.
+- Prefer the `TextTheme` slots and component themes set in the app theme, used through
+  `Theme.of(context).textTheme.<slot>`.
+- For a one-off tweak, use `copyWith` on a slot (e.g. a strikethrough price, a bolder total). Add
+  a named custom style only when the same tweak is needed in several places and no slot fits.
 - Never hardcode text or surface colours. Take them from `Theme.of(context).colorScheme` so light
   and dark mode both work.
 
