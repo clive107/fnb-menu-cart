@@ -23,6 +23,7 @@ class AppSizes {
 
   /* Section - Images */
   static const double menuItemThumbnail = 72.0;
+  static const double cartItemThumbnail = 56.0;
 
   /* Section - Layout */
   // Caps content width on tablets and wide windows, so lines stay readable.

@@ -5,9 +5,10 @@ import 'package:fnb_menu_cart/blocs/order/checkout/checkout_bloc.dart';
 import 'package:fnb_menu_cart/configs/themes/styles.dart';
 import 'package:fnb_menu_cart/models/order/cart_item.dart';
 import 'package:fnb_menu_cart/utils/data_types/price.dart';
+import 'package:fnb_menu_cart/widgets/menu/menu_item_thumbnail.dart';
 import 'package:fnb_menu_cart/widgets/order/quantity_stepper.dart';
 
-/// One line in the cart: name, prices and quantity controls.
+/// One line in the cart: thumbnail, name, prices and quantity controls.
 class CartItemTile extends StatelessWidget {
   final CartItem cartItem;
 
@@ -32,57 +33,75 @@ class CartItemTile extends StatelessWidget {
             AppSpacing.xs,
             AppSpacing.md,
           ),
-          child: Column(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              /* Section - Name and remove */
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      cartItem.menuItem.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: isPlacingOrder
-                        ? null
-                        : () => cartCubit.removeItem(menuItemId),
-                    tooltip: 'Remove',
-                  ),
-                ],
+              /* Section - Thumbnail */
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                child: MenuItemThumbnail(
+                  size: AppSizes.cartItemThumbnail,
+                  url: cartItem.menuItem.thumbnailUrl,
+                ),
               ),
-              /* Section - Prices and quantity */
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  children: [
+                    /* Section - Name and remove */
+                    Row(
                       children: [
-                        Text(
-                          formatPrice(cartItem.subtotalInCents),
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: theme.colorScheme.primary,
+                        Expanded(
+                          child: Text(
+                            cartItem.menuItem.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleSmall,
                           ),
                         ),
-                        Text(
-                          '${formatPrice(cartItem.menuItem.priceInCents)} each',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: isPlacingOrder
+                              ? null
+                              : () => cartCubit.removeItem(menuItemId),
+                          tooltip: 'Remove',
                         ),
                       ],
                     ),
-                  ),
-                  QuantityStepper(
-                    isEnabled: !isPlacingOrder,
-                    onDecrement: () => cartCubit.decrementItem(menuItemId),
-                    onIncrement: () => cartCubit.incrementItem(menuItemId),
-                    quantity: cartItem.quantity,
-                  ),
-                ],
+                    /* Section - Prices and quantity */
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                formatPrice(cartItem.subtotalInCents),
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                              Text(
+                                '${formatPrice(cartItem.menuItem.priceInCents)} each',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        QuantityStepper(
+                          isEnabled: !isPlacingOrder,
+                          onDecrement: () =>
+                              cartCubit.decrementItem(menuItemId),
+                          onIncrement: () =>
+                              cartCubit.incrementItem(menuItemId),
+                          quantity: cartItem.quantity,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
