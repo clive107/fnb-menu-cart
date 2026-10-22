@@ -134,6 +134,45 @@ void main() {
     expect(find.text('Your cart is empty'), findsOneWidget);
   });
 
+  testWidgets("Disables + in the cart once it holds all of an item's stock.", (
+    tester,
+  ) async {
+    when(
+      () => mockApiClient.jsonGet(any(), query: any(named: 'query')),
+    ).thenAnswer(
+      (_) async => {
+        'products': [
+          {
+            'id': 26,
+            'title': 'Green Chili Pepper',
+            'description': 'Spicy pepper',
+            'price': 0.99,
+            'stock': 2,
+            'availabilityStatus': 'Low Stock',
+            'tags': ['vegetables'],
+          },
+        ],
+      },
+    );
+    await pumpApp(tester);
+    await tester.tap(addButtonOn('Green Chili Pepper'));
+    await tester.pump();
+    await openCart(tester);
+
+    expect(
+      iconButtonInTile(tester, 'Green Chili Pepper', 'Add one').onPressed,
+      isNotNull,
+    );
+    await tester.tap(buttonInTile('Green Chili Pepper', 'Add one'));
+    await tester.pump();
+
+    expect(
+      iconButtonInTile(tester, 'Green Chili Pepper', 'Add one').onPressed,
+      isNull,
+    );
+    expect(find.text(r'$1.98'), findsNWidgets(2)); // Subtotal and total
+  });
+
   testWidgets('An empty cart offers a way back to the menu.', (tester) async {
     await pumpApp(tester);
     await openCart(tester);

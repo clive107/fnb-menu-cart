@@ -8,6 +8,8 @@ class QuantityStepper extends StatelessWidget {
   final VoidCallback onIncrement;
   // False disables both buttons, e.g. while an order is in flight.
   final bool isEnabled;
+  // False disables only "+", e.g. once the cart holds all the stock.
+  final bool canIncrement;
 
   const QuantityStepper({
     super.key,
@@ -15,6 +17,7 @@ class QuantityStepper extends StatelessWidget {
     required this.onDecrement,
     required this.onIncrement,
     this.isEnabled = true,
+    this.canIncrement = true,
   });
 
   @override
@@ -37,7 +40,7 @@ class QuantityStepper extends StatelessWidget {
         ),
         IconButton.filledTonal(
           icon: const Icon(Icons.add),
-          onPressed: isEnabled ? onIncrement : null,
+          onPressed: isEnabled && canIncrement ? onIncrement : null,
           tooltip: 'Add one',
           visualDensity: VisualDensity.compact,
         ),

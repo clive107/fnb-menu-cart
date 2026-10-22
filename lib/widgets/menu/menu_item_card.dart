@@ -167,6 +167,7 @@ class _CartControl extends StatelessWidget {
                               : () => cartCubit.addItem(menuItem),
                         )
                       : QuantityStepper(
+                          canIncrement: quantity < menuItem.stock,
                           isEnabled: !isPlacingOrder,
                           onDecrement: () =>
                               cartCubit.decrementItem(menuItem.id),

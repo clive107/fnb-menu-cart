@@ -180,6 +180,47 @@ void main() {
     expect(tester.getSize(appleCard).height, heightBefore);
   });
 
+  testWidgets("Disables + once the cart holds all of an item's stock.", (
+    tester,
+  ) async {
+    when(() => mockMenuService.getMenuItemList()).thenAnswer(
+      (_) async => {
+        'products': [
+          {
+            'id': 26,
+            'title': 'Green Chili Pepper',
+            'description': 'Spicy pepper',
+            'price': 0.99,
+            'stock': 1,
+            'availabilityStatus': 'Low Stock',
+            'tags': ['vegetables'],
+          },
+        ],
+      },
+    );
+
+    await pumpMenuScreen(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(addButtonOn('Green Chili Pepper'));
+    await tester.pump();
+
+    // One in the cart is all the stock, so "+" is disabled; "−" still works.
+    final IconButton addOneButton = tester.widget<IconButton>(
+      find.ancestor(
+        of: find.byTooltip('Add one'),
+        matching: find.bySubtype<IconButton>(),
+      ),
+    );
+    expect(addOneButton.onPressed, isNull);
+    final IconButton removeOneButton = tester.widget<IconButton>(
+      find.ancestor(
+        of: find.byTooltip('Remove one'),
+        matching: find.bySubtype<IconButton>(),
+      ),
+    );
+    expect(removeOneButton.onPressed, isNotNull);
+  });
+
   testWidgets('Out-of-stock items look distinct and cannot be added.', (
     tester,
   ) async {

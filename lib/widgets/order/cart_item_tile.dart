@@ -91,6 +91,7 @@ class CartItemTile extends StatelessWidget {
                           ),
                         ),
                         QuantityStepper(
+                          canIncrement: !cartItem.isAtStockLimit,
                           isEnabled: !isPlacingOrder,
                           onDecrement: () =>
                               cartCubit.decrementItem(menuItemId),
