@@ -81,6 +81,7 @@ class MenuItemCard extends StatelessWidget {
                             ),
                             _AvailabilityLabel(
                               availability: menuItem.availability,
+                              stock: menuItem.stock,
                             ),
                           ],
                         ),
@@ -100,8 +101,9 @@ class MenuItemCard extends StatelessWidget {
 
 class _AvailabilityLabel extends StatelessWidget {
   final MenuItemAvailability availability;
+  final int stock;
 
-  const _AvailabilityLabel({required this.availability});
+  const _AvailabilityLabel({required this.availability, required this.stock});
 
   @override
   Widget build(BuildContext context) {
@@ -111,8 +113,9 @@ class _AvailabilityLabel extends StatelessWidget {
         'In stock',
         theme.colorScheme.onSurfaceVariant,
       ),
+      // The exact count tells the customer how many they can still add.
       MenuItemAvailability.lowStock => (
-        'Low stock',
+        'Only $stock left',
         theme.colorScheme.tertiary,
       ),
       MenuItemAvailability.outOfStock => (

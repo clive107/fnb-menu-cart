@@ -180,7 +180,7 @@ void main() {
     expect(tester.getSize(appleCard).height, heightBefore);
   });
 
-  testWidgets("Disables + once the cart holds all of an item's stock.", (
+  testWidgets("Shows how many are left, and disables + at that stock.", (
     tester,
   ) async {
     when(() => mockMenuService.getMenuItemList()).thenAnswer(
@@ -201,6 +201,7 @@ void main() {
 
     await pumpMenuScreen(tester);
     await tester.pumpAndSettle();
+    expect(find.text('Only 1 left'), findsOneWidget);
     await tester.tap(addButtonOn('Green Chili Pepper'));
     await tester.pump();
 
