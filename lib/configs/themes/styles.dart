@@ -23,4 +23,8 @@ class AppSizes {
 
   /* Section - Images */
   static const double menuItemThumbnail = 72.0;
+
+  /* Section - Layout */
+  // Caps content width on tablets and wide windows, so lines stay readable.
+  static const double maxContentWidth = 720.0;
 }
