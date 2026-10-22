@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fnb_menu_cart/blocs/menu/menu_item_list/menu_item_list_bloc.dart';
+import 'package:fnb_menu_cart/blocs/order/cart/cart_cubit.dart';
+import 'package:fnb_menu_cart/blocs/order/checkout/checkout_bloc.dart';
 import 'package:fnb_menu_cart/configs/themes/app_colors.dart';
 import 'package:fnb_menu_cart/configs/themes/styles.dart';
 import 'package:fnb_menu_cart/screens/cart/cart_screen.dart';
@@ -42,21 +45,53 @@ class MyApp extends StatelessWidget {
           create: (context) => OrderService(apiClient: apiClient),
         ),
       ],
-      child: MaterialApp(
-        darkTheme: _buildTheme(Brightness.dark),
-        debugShowCheckedModeBanner: false,
-        initialRoute: AppRoutes.menu,
-        routes: {
-          /* Section - Menu screen */
-          AppRoutes.menu: (context) => const MenuScreen(),
-          /* Section - Cart screen */
-          AppRoutes.cart: (context) => const CartScreen(),
-        },
-        theme: _buildTheme(Brightness.light),
-        // Follows the device setting, so switching dark mode on the device
-        // switches the app's theme.
-        themeMode: ThemeMode.system,
-        title: 'F&B Menu',
+      /* Section - MultiBlocProvider */
+      // Above MaterialApp, so the menu, cart and an order in flight survive
+      // navigation, rotation and theme changes.
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<MenuItemListBloc>(
+            create: (context) => MenuItemListBloc(
+              logger: context.read<Logger>(),
+              menuService: context.read<MenuService>(),
+            )..add(const GetMenuItemList()),
+          ),
+          BlocProvider<CartCubit>(
+            create: (context) => CartCubit(logger: context.read<Logger>()),
+          ),
+          BlocProvider<CheckoutBloc>(
+            create: (context) => CheckoutBloc(
+              logger: context.read<Logger>(),
+              orderService: context.read<OrderService>(),
+            ),
+          ),
+        ],
+        /* Section - BlocListener for CheckoutBloc */
+        // Clears the cart once an order succeeds. It sits here rather than on
+        // the cart screen so it still runs if the user has left that screen
+        // before the response arrives.
+        child: BlocListener<CheckoutBloc, CheckoutState>(
+          listenWhen: (previous, current) =>
+              previous.placeOrderStatus != current.placeOrderStatus &&
+              current.placeOrderStatus.isSuccess,
+          listener: (context, state) => context.read<CartCubit>().clearCart(),
+          child: MaterialApp(
+            darkTheme: _buildTheme(Brightness.dark),
+            debugShowCheckedModeBanner: false,
+            initialRoute: AppRoutes.menu,
+            routes: {
+              /* Section - Menu screen */
+              AppRoutes.menu: (context) => const MenuScreen(),
+              /* Section - Cart screen */
+              AppRoutes.cart: (context) => const CartScreen(),
+            },
+            theme: _buildTheme(Brightness.light),
+            // Follows the device setting, so switching dark mode on the device
+            // switches the app's theme.
+            themeMode: ThemeMode.system,
+            title: 'F&B Menu',
+          ),
+        ),
       ),
     );
   }
