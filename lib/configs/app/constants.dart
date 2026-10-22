@@ -11,3 +11,6 @@ const Set<String> kNonFoodTags = {
   'household essentials',
   'pet supplies',
 };
+// No grocery item is out of stock in DummyJSON, so these are forced out of
+// stock to show that state (Fish Steak, Nescafe Coffee).
+const Set<int> kDemoOutOfStockItemIds = {24, 34};

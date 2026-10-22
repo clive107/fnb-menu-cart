@@ -6,7 +6,8 @@ class MenuService {
 
   MenuService({required ApiClient apiClient}) : _apiClient = apiClient;
 
-  /// Returns the API response with `products` limited to food and drink.
+  /// Returns the API response with `products` limited to food and drink, and
+  /// the demo items marked out of stock.
   Future<Map<String, dynamic>> getMenuItemList() async {
     final Map<String, dynamic> response = await _apiClient.jsonGet(
       kMenuCategoryPath,
@@ -19,12 +20,24 @@ class MenuService {
     );
     final List<dynamic> products =
         response['products'] as List<dynamic>? ?? const [];
-    return {...response, 'products': products.where(_isFood).toList()};
+    return {
+      ...response,
+      'products': products.where(_isFood).map(_applyDemoStock).toList(),
+    };
   }
 
   bool _isFood(dynamic product) {
     final List<dynamic> tags =
         (product as Map<String, dynamic>)['tags'] as List<dynamic>? ?? const [];
     return tags.isEmpty || !kNonFoodTags.contains(tags.first);
+  }
+
+  /// Marks the items in [kDemoOutOfStockItemIds] out of stock.
+  dynamic _applyDemoStock(dynamic product) {
+    final Map<String, dynamic> json = product as Map<String, dynamic>;
+    if (!kDemoOutOfStockItemIds.contains(json['id'])) {
+      return json;
+    }
+    return {...json, 'stock': 0, 'availabilityStatus': 'Out of Stock'};
   }
 }
