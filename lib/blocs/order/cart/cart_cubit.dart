@@ -19,13 +19,17 @@ class CartCubit extends Cubit<CartState> {
       super(const CartState());
 
   /// Adds one of [menuItem], or one more if it's already in the cart.
-  /// Out-of-stock items are ignored.
+  /// Ignored for out-of-stock items and once the cart holds all the stock.
   void addItem(MenuItem menuItem) {
     if (menuItem.availability.isOutOfStock) {
       _logger.w('$_kTag addItem: ${menuItem.id} is out of stock, ignoring');
       return;
     }
     final CartItem? cartItem = state.cartItemsById[menuItem.id];
+    if (cartItem != null && cartItem.isAtStockLimit) {
+      _logger.w('$_kTag addItem: ${menuItem.id} at stock limit, ignoring');
+      return;
+    }
     _logger.d('$_kTag addItem: ${menuItem.id}');
     _emitWith(
       menuItem.id,
@@ -35,10 +39,15 @@ class CartCubit extends Cubit<CartState> {
     );
   }
 
+  /// Adds one more, unless the cart already holds all the stock.
   void incrementItem(int menuItemId) {
     final CartItem? cartItem = state.cartItemsById[menuItemId];
     if (cartItem == null) {
       _logger.w('$_kTag incrementItem: $menuItemId not in cart, ignoring');
+      return;
+    }
+    if (cartItem.isAtStockLimit) {
+      _logger.w('$_kTag incrementItem: $menuItemId at stock limit, ignoring');
       return;
     }
     _logger.d('$_kTag incrementItem: $menuItemId');

@@ -9,6 +9,9 @@ class CartItem extends Equatable {
 
   int get subtotalInCents => menuItem.priceInCents * quantity;
 
+  /// True when no more can be added without exceeding the available stock.
+  bool get isAtStockLimit => quantity >= menuItem.stock;
+
   @override
   List<Object?> get props => [menuItem, quantity];
 

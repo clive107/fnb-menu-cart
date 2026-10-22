@@ -99,6 +99,19 @@ void main() {
     );
   });
 
+  group('[CartItem] tests -', () {
+    test('isAtStockLimit is true only once quantity reaches the stock.', () {
+      expect(
+        const CartItem(menuItem: fakeJuice, quantity: 2).isAtStockLimit,
+        isFalse,
+      );
+      expect(
+        const CartItem(menuItem: fakeJuice, quantity: 3).isAtStockLimit,
+        isTrue,
+      );
+    });
+  });
+
   group('[addItem] tests -', () {
     blocTest<CartCubit, CartState>(
       'Adds the item with quantity 1 when it is not in the cart.',
@@ -137,6 +150,16 @@ void main() {
     );
 
     blocTest<CartCubit, CartState>(
+      'Emits nothing when the cart already holds all the stock.',
+      build: () => cartCubit,
+      seed: () => const CartState(
+        cartItemsById: {29: CartItem(menuItem: fakeJuice, quantity: 3)},
+      ),
+      act: (cubit) => cubit.addItem(fakeJuice),
+      expect: () => <CartState>[],
+    );
+
+    blocTest<CartCubit, CartState>(
       'Emits nothing when the item is out of stock.',
       build: () => cartCubit,
       act: (cubit) => cubit.addItem(fakeCoffee),
@@ -157,6 +180,16 @@ void main() {
           cartItemsById: {16: CartItem(menuItem: fakeApple, quantity: 2)},
         ),
       ],
+    );
+
+    blocTest<CartCubit, CartState>(
+      'Emits nothing when the cart already holds all the stock.',
+      build: () => cartCubit,
+      seed: () => const CartState(
+        cartItemsById: {29: CartItem(menuItem: fakeJuice, quantity: 3)},
+      ),
+      act: (cubit) => cubit.incrementItem(29),
+      expect: () => <CartState>[],
     );
 
     blocTest<CartCubit, CartState>(
