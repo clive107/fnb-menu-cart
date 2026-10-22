@@ -279,6 +279,32 @@ void main() {
     },
   );
 
+  testWidgets(
+    'Leaving the cart mid-order still shows a failed order on the menu.',
+    (tester) async {
+      final Completer<Map<String, dynamic>> orderCompleter =
+          Completer<Map<String, dynamic>>();
+      when(
+        () => mockApiClient.jsonPost(any(), body: any(named: 'body')),
+      ).thenAnswer((_) => orderCompleter.future);
+      await addItemsAndOpenCart(tester);
+
+      await tester.tap(find.text('Place order'));
+      await tester.pump();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(AppBar, 'Menu'), findsOneWidget);
+
+      orderCompleter.completeError(const TimeoutFailure());
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text(kTimeoutMessage), findsOneWidget);
+      // The cart is kept: 2 Apples and 1 Juice.
+      expect(find.byTooltip('Cart, 3 items'), findsOneWidget);
+    },
+  );
+
   testWidgets('Lays out without overflow on a narrow 320px phone.', (
     tester,
   ) async {

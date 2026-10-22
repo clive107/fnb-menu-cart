@@ -5,7 +5,6 @@ import 'package:fnb_menu_cart/blocs/order/checkout/checkout_bloc.dart';
 import 'package:fnb_menu_cart/configs/themes/styles.dart';
 import 'package:fnb_menu_cart/models/order/cart_item.dart';
 import 'package:fnb_menu_cart/services/order/order_service.dart';
-import 'package:fnb_menu_cart/utils/app/error_handling/get_failure_message.dart';
 import 'package:fnb_menu_cart/utils/data_types/price.dart';
 import 'package:fnb_menu_cart/widgets/order/cart_item_tile.dart';
 
@@ -14,48 +13,34 @@ class CartScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    /* Section - BlocListener for CheckoutBloc */
-    // Failures show here, where the user can retry. Success is handled in
-    // app.dart, so it's shown even if the user has left this screen.
-    return BlocListener<CheckoutBloc, CheckoutState>(
-      listenWhen: (previous, current) =>
-          previous.placeOrderStatus != current.placeOrderStatus &&
-          current.placeOrderStatus.isFailure,
-      listener: (context, state) => ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        // No action: it disappears after 4s, and Place Order is the retry.
-        ..showSnackBar(
-          SnackBar(
-            content: Text(getFailureMessage(failure: state.placeOrderFailure)),
-          ),
-        ),
-      child: Scaffold(
-        appBar: AppBar(title: const Text('Cart')),
-        /* Section - BlocBuilder for CartCubit */
-        body: BlocBuilder<CartCubit, CartState>(
-          builder: (context, state) {
-            if (state.isEmpty) {
-              return const _EmptyCart();
-            }
-            return Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: AppSizes.maxContentWidth,
-                ),
-                child: Column(
-                  children: [
-                    /* Section - Cart items */
-                    Expanded(
-                      child: _CartItemList(cartItemList: state.cartItemList),
-                    ),
-                    /* Section - Cart summary */
-                    const _CartSummary(),
-                  ],
-                ),
+    // The order's outcome (dialog or failure snackbar) is shown from app.dart,
+    // so it appears even if the user has left this screen.
+    return Scaffold(
+      appBar: AppBar(title: const Text('Cart')),
+      /* Section - BlocBuilder for CartCubit */
+      body: BlocBuilder<CartCubit, CartState>(
+        builder: (context, state) {
+          if (state.isEmpty) {
+            return const _EmptyCart();
+          }
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: AppSizes.maxContentWidth,
               ),
-            );
-          },
-        ),
+              child: Column(
+                children: [
+                  /* Section - Cart items */
+                  Expanded(
+                    child: _CartItemList(cartItemList: state.cartItemList),
+                  ),
+                  /* Section - Cart summary */
+                  const _CartSummary(),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

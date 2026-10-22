@@ -222,6 +222,49 @@ void main() {
     expect(removeOneButton.onPressed, isNotNull);
   });
 
+  testWidgets(
+    'Tapping + rebuilds only that item\'s control and the cart badge.',
+    (tester) async {
+      when(
+        () => mockMenuService.getMenuItemList(),
+      ).thenAnswer((_) async => fakeResponse);
+      await pumpMenuScreen(tester);
+      await tester.pumpAndSettle();
+      await tester.tap(addButtonOn('Apple'));
+      await tester.pump();
+
+      // These Texts are non-const and created in _MenuSectionList.build and
+      // MenuItemCard.build, so each run of those methods makes new Text
+      // objects. If a Text is the identical object after the tap, the build()
+      // that creates it did not run again. (A const widget stays identical
+      // even when the build() containing it runs, so it can't be used here.)
+      final Widget categoryHeaderBefore = tester.widget(find.text('Fruits'));
+      final Widget appleNameBefore = tester.widget(find.text('Apple'));
+      final Widget otherItemNameBefore = tester.widget(
+        find.text('Nescafe Coffee'),
+      );
+      await tester.tap(find.byTooltip('Add one'));
+      await tester.pump();
+
+      // Not rebuilt: the list, Apple's card itself, and the other card.
+      expect(tester.widget(find.text('Fruits')), same(categoryHeaderBefore));
+      expect(tester.widget(find.text('Apple')), same(appleNameBefore));
+      expect(
+        tester.widget(find.text('Nescafe Coffee')),
+        same(otherItemNameBefore),
+      );
+      // Rebuilt: Apple's quantity control and the cart badge.
+      expect(
+        find.descendant(
+          of: find.widgetWithText(Card, 'Apple'),
+          matching: find.text('2'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.byTooltip('Cart, 2 items'), findsOneWidget);
+    },
+  );
+
   testWidgets('Out-of-stock items look distinct and cannot be added.', (
     tester,
   ) async {

@@ -11,6 +11,7 @@ import 'package:fnb_menu_cart/services/app/api_client.dart';
 import 'package:fnb_menu_cart/services/menu/menu_service.dart';
 import 'package:fnb_menu_cart/services/order/order_service.dart';
 import 'package:fnb_menu_cart/utils/app/app_routes.dart';
+import 'package:fnb_menu_cart/utils/app/error_handling/get_failure_message.dart';
 import 'package:fnb_menu_cart/utils/app/global_navigator.dart';
 import 'package:fnb_menu_cart/widgets/order/order_placed_dialog.dart';
 import 'package:http/http.dart' as http;
@@ -68,34 +69,62 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ],
-        /* Section - BlocListener for CheckoutBloc */
-        // When an order succeeds: clears the cart and confirms with a dialog.
-        // It sits here rather than on the cart screen so it still runs if the
-        // user has left that screen before the response arrives.
-        child: BlocListener<CheckoutBloc, CheckoutState>(
-          listenWhen: (previous, current) =>
-              previous.placeOrderStatus != current.placeOrderStatus &&
-              current.placeOrderStatus.isSuccess,
-          listener: (context, state) async {
-            context.read<CartCubit>().clearCart();
-            // This context is above MaterialApp, so the dialog goes through
-            // the navigator key and appears on whichever screen is open.
-            final BuildContext? navigatorContext =
-                globalNavigatorKey.currentContext;
-            if (navigatorContext == null) {
-              return;
-            }
-            final CheckoutBloc checkoutBloc = context.read<CheckoutBloc>();
-            await showOrderPlacedDialog(
-              context: navigatorContext,
-              orderId: state.orderId,
-            );
-            // Back to the menu, and checkout back to idle for the next order.
-            globalNavigatorKey.currentState?.popUntil(
-              (Route<dynamic> route) => route.isFirst,
-            );
-            checkoutBloc.add(const ResetCheckout());
-          },
+        /* Section - MultiBlocListener */
+        // The order's outcome is handled here rather than on the cart screen,
+        // so it's still shown if the user has left that screen before the
+        // response arrives.
+        child: MultiBlocListener(
+          listeners: [
+            /* Section - BlocListener for CheckoutBloc */
+            // Success: clears the cart and confirms with a dialog.
+            BlocListener<CheckoutBloc, CheckoutState>(
+              listenWhen: (previous, current) =>
+                  previous.placeOrderStatus != current.placeOrderStatus &&
+                  current.placeOrderStatus.isSuccess,
+              listener: (context, state) async {
+                context.read<CartCubit>().clearCart();
+                // This context is above MaterialApp, so the dialog goes
+                // through the navigator key and appears on whichever screen
+                // is open.
+                final BuildContext? navigatorContext =
+                    globalNavigatorKey.currentContext;
+                if (navigatorContext == null) {
+                  return;
+                }
+                final CheckoutBloc checkoutBloc = context.read<CheckoutBloc>();
+                await showOrderPlacedDialog(
+                  context: navigatorContext,
+                  orderId: state.orderId,
+                );
+                // Back to the menu, and checkout back to idle for the next
+                // order.
+                globalNavigatorKey.currentState?.popUntil(
+                  (Route<dynamic> route) => route.isFirst,
+                );
+                checkoutBloc.add(const ResetCheckout());
+              },
+            ),
+            /* Section - BlocListener for CheckoutBloc */
+            // Failure: a snackbar through the messenger key, on whichever
+            // screen is open. The cart is kept.
+            BlocListener<CheckoutBloc, CheckoutState>(
+              listenWhen: (previous, current) =>
+                  previous.placeOrderStatus != current.placeOrderStatus &&
+                  current.placeOrderStatus.isFailure,
+              listener: (context, state) =>
+                  globalScaffoldMessengerKey.currentState
+                    ?..hideCurrentSnackBar()
+                    // No action: it disappears after 4s, and Place Order is the
+                    // retry.
+                    ..showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          getFailureMessage(failure: state.placeOrderFailure),
+                        ),
+                      ),
+                    ),
+            ),
+          ],
           child: MaterialApp(
             darkTheme: _buildTheme(Brightness.dark),
             debugShowCheckedModeBanner: false,
@@ -107,6 +136,7 @@ class MyApp extends StatelessWidget {
               /* Section - Cart screen */
               AppRoutes.cart: (context) => const CartScreen(),
             },
+            scaffoldMessengerKey: globalScaffoldMessengerKey,
             theme: _buildTheme(Brightness.light),
             // Follows the device setting, so switching dark mode on the device
             // switches the app's theme.
