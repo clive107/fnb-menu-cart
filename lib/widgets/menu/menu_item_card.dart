@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fnb_menu_cart/blocs/order/cart/cart_cubit.dart';
+import 'package:fnb_menu_cart/blocs/order/checkout/checkout_bloc.dart';
 import 'package:fnb_menu_cart/configs/themes/styles.dart';
 import 'package:fnb_menu_cart/enums/menu/menu_item_availability.dart';
 import 'package:fnb_menu_cart/models/menu/menu_item.dart';
@@ -168,35 +169,47 @@ class _CartControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    /* Section - BlocSelector for CartCubit */
-    // Selects only this item's quantity, so a change to another item doesn't
-    // rebuild this control.
-    return BlocSelector<CartCubit, CartState, int>(
-      selector: (state) => state.quantityOf(menuItem.id),
-      builder: (context, quantity) {
-        final CartCubit cartCubit = context.read<CartCubit>();
-        // Fixed height: the Add button is taller than the stepper, so without
-        // it the card would shrink when one replaces the other.
-        return SizedBox(
-          height: AppSizes.buttonHeight,
-          child: Center(
-            child: quantity == 0
-                ? FilledButton.tonalIcon(
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add'),
-                    // Disabled, so out-of-stock items can't be added.
-                    onPressed: menuItem.availability.isOutOfStock
-                        ? null
-                        : () => cartCubit.addItem(menuItem),
-                  )
-                : QuantityStepper(
-                    quantity: quantity,
-                    onDecrement: () => cartCubit.decrementItem(menuItem.id),
-                    onIncrement: () => cartCubit.addItem(menuItem),
-                  ),
+    /* Section - BlocSelector for CheckoutBloc */
+    // Locked while an order is in flight, so the cart cleared on success is
+    // exactly what was ordered.
+    return BlocSelector<CheckoutBloc, CheckoutState, bool>(
+      selector: (state) => state.placeOrderStatus.isLoading,
+      builder: (context, isPlacingOrder) =>
+          /* Section - BlocSelector for CartCubit */
+          // Selects only this item's quantity, so a change to another item
+          // doesn't rebuild this control.
+          BlocSelector<CartCubit, CartState, int>(
+            selector: (state) => state.quantityOf(menuItem.id),
+            builder: (context, quantity) {
+              final CartCubit cartCubit = context.read<CartCubit>();
+              // Fixed height: the Add button is taller than the stepper, so
+              // without it the card would shrink when one replaces the other.
+              return SizedBox(
+                height: AppSizes.buttonHeight,
+                child: Center(
+                  child: quantity == 0
+                      ? FilledButton.tonalIcon(
+                          icon: const Icon(Icons.add),
+                          label: const Text('Add'),
+                          // Disabled for out-of-stock items, and while an
+                          // order is in flight.
+                          onPressed:
+                              menuItem.availability.isOutOfStock ||
+                                  isPlacingOrder
+                              ? null
+                              : () => cartCubit.addItem(menuItem),
+                        )
+                      : QuantityStepper(
+                          isEnabled: !isPlacingOrder,
+                          onDecrement: () =>
+                              cartCubit.decrementItem(menuItem.id),
+                          onIncrement: () => cartCubit.addItem(menuItem),
+                          quantity: quantity,
+                        ),
+                ),
+              );
+            },
           ),
-        );
-      },
     );
   }
 }

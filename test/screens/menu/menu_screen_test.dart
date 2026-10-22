@@ -3,14 +3,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fnb_menu_cart/blocs/menu/menu_item_list/menu_item_list_bloc.dart';
 import 'package:fnb_menu_cart/blocs/order/cart/cart_cubit.dart';
+import 'package:fnb_menu_cart/blocs/order/checkout/checkout_bloc.dart';
 import 'package:fnb_menu_cart/models/app/error_handling/failure.dart';
 import 'package:fnb_menu_cart/screens/menu/menu_screen.dart';
 import 'package:fnb_menu_cart/services/menu/menu_service.dart';
+import 'package:fnb_menu_cart/services/order/order_service.dart';
 import 'package:fnb_menu_cart/utils/app/error_handling/get_failure_message.dart';
 import 'package:logger/logger.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockMenuService extends Mock implements MenuService {}
+
+class MockOrderService extends Mock implements OrderService {}
 
 void main() {
   late MenuService mockMenuService;
@@ -64,6 +68,11 @@ void main() {
           ),
           BlocProvider<CartCubit>(
             create: (context) => CartCubit(logger: logger),
+          ),
+          // The menu's cart controls lock while an order is in flight.
+          BlocProvider<CheckoutBloc>(
+            create: (context) =>
+                CheckoutBloc(logger: logger, orderService: MockOrderService()),
           ),
         ],
         child: const MaterialApp(home: MenuScreen()),

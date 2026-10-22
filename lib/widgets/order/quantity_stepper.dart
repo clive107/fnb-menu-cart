@@ -6,12 +6,15 @@ class QuantityStepper extends StatelessWidget {
   final int quantity;
   final VoidCallback onDecrement;
   final VoidCallback onIncrement;
+  // False disables both buttons, e.g. while an order is in flight.
+  final bool isEnabled;
 
   const QuantityStepper({
     super.key,
     required this.quantity,
     required this.onDecrement,
     required this.onIncrement,
+    this.isEnabled = true,
   });
 
   @override
@@ -21,7 +24,7 @@ class QuantityStepper extends StatelessWidget {
       children: [
         IconButton.filledTonal(
           icon: const Icon(Icons.remove),
-          onPressed: onDecrement,
+          onPressed: isEnabled ? onDecrement : null,
           tooltip: 'Remove one',
           visualDensity: VisualDensity.compact,
         ),
@@ -34,7 +37,7 @@ class QuantityStepper extends StatelessWidget {
         ),
         IconButton.filledTonal(
           icon: const Icon(Icons.add),
-          onPressed: onIncrement,
+          onPressed: isEnabled ? onIncrement : null,
           tooltip: 'Add one',
           visualDensity: VisualDensity.compact,
         ),
