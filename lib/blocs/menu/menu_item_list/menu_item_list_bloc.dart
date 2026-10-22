@@ -1,3 +1,5 @@
+import 'dart:io' show HttpStatus;
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fnb_menu_cart/models/app/error_handling/failure.dart';
@@ -65,10 +67,18 @@ class MenuItemListBloc extends Bloc<MenuItemListEvent, MenuItemListState> {
       );
     } catch (e) {
       _logger.e('$kTag Get menu item list failed: $e');
-      // ApiClient turns network and HTTP errors into a Failure. Anything else
-      // (e.g. an unexpected JSON shape) has no failure to show, so the UI
-      // falls back to a generic message.
-      final Failure? failure = e is Failure ? e : null;
+      // ApiClient turns network and HTTP errors into a Failure. A TypeError
+      // here means the JSON didn't have the expected shape (e.g. a missing
+      // price), so it's shown as a bad-format error. Anything else has no
+      // failure to show, so the UI falls back to a generic message.
+      final Failure? failure = switch (e) {
+        Failure() => e,
+        TypeError() => const Failure(
+          statusCode: HttpStatus.ok,
+          errorCode: kBadFormatFailure,
+        ),
+        _ => null,
+      };
       // Emit state with failure status and failure
       emit(
         state.copyWith(

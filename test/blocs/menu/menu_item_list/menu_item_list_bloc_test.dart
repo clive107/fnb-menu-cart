@@ -1,3 +1,5 @@
+import 'dart:io' show HttpStatus;
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fnb_menu_cart/blocs/menu/menu_item_list/menu_item_list_bloc.dart';
@@ -292,6 +294,37 @@ void main() {
         const MenuItemListState(
           getMenuItemListStatus: GetMenuItemListStatus.failure,
           getMenuItemListFailure: ClientExceptionFailure(),
+          menuSectionList: null,
+        ),
+      ],
+    );
+
+    // Scenario - Unexpected JSON shape
+    blocTest<MenuItemListBloc, MenuItemListState>(
+      'Emits [loading, failure] with a bad-format failure when [GetMenuItemList] is added and a product is missing fields.',
+      build: () {
+        when(() => mockMenuService.getMenuItemList()).thenAnswer(
+          (_) async => {
+            'products': [
+              {'id': 1},
+            ],
+          },
+        );
+        return menuItemListBloc;
+      },
+      act: (bloc) => bloc.add(const GetMenuItemList()),
+      expect: () => [
+        const MenuItemListState(
+          getMenuItemListStatus: GetMenuItemListStatus.loading,
+          getMenuItemListFailure: null,
+          menuSectionList: null,
+        ),
+        const MenuItemListState(
+          getMenuItemListStatus: GetMenuItemListStatus.failure,
+          getMenuItemListFailure: Failure(
+            statusCode: HttpStatus.ok,
+            errorCode: kBadFormatFailure,
+          ),
           menuSectionList: null,
         ),
       ],
