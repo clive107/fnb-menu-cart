@@ -10,6 +10,8 @@ class MenuItem extends Equatable {
   final int priceInCents;
   final String category;
   final MenuItemAvailability availability;
+  // Units available; the cart can't hold more than this.
+  final int stock;
   final String? thumbnailUrl;
 
   const MenuItem({
@@ -19,6 +21,7 @@ class MenuItem extends Equatable {
     required this.priceInCents,
     required this.category,
     required this.availability,
+    required this.stock,
     this.thumbnailUrl,
   });
 
@@ -30,6 +33,7 @@ class MenuItem extends Equatable {
     priceInCents,
     category,
     availability,
+    stock,
     thumbnailUrl,
   ];
 
@@ -37,6 +41,7 @@ class MenuItem extends Equatable {
   /// since the API has no menu-category field.
   factory MenuItem.fromJson(Map<String, dynamic> json) {
     final List<dynamic> tags = json['tags'] as List<dynamic>? ?? const [];
+    final int stock = json['stock'] as int? ?? 0;
     return MenuItem(
       id: json['id'] as int,
       name: json['title'] as String,
@@ -44,9 +49,10 @@ class MenuItem extends Equatable {
       priceInCents: ((json['price'] as num) * 100).round(),
       category: tags.isNotEmpty ? tags.first as String : 'other',
       availability: _parseAvailability(
-        stock: json['stock'] as int? ?? 0,
+        stock: stock,
         status: json['availabilityStatus'] as String?,
       ),
+      stock: stock,
       thumbnailUrl: json['thumbnail'] as String?,
     );
   }

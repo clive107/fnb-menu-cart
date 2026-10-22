@@ -20,6 +20,7 @@ void main() {
     priceInCents: 199,
     category: 'fruits',
     availability: MenuItemAvailability.inStock,
+    stock: 8,
   );
   const MenuItem fakeJuice = MenuItem(
     id: 29,
@@ -28,6 +29,7 @@ void main() {
     priceInCents: 399,
     category: 'beverages',
     availability: MenuItemAvailability.lowStock,
+    stock: 3,
   );
   const MenuItem fakeCoffee = MenuItem(
     id: 34,
@@ -36,6 +38,7 @@ void main() {
     priceInCents: 799,
     category: 'beverages',
     availability: MenuItemAvailability.outOfStock,
+    stock: 0,
   );
 
   setUp(() {
