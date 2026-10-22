@@ -1,0 +1,196 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fnb_menu_cart/blocs/order/cart/cart_cubit.dart';
+import 'package:fnb_menu_cart/configs/themes/styles.dart';
+import 'package:fnb_menu_cart/enums/menu/menu_item_availability.dart';
+import 'package:fnb_menu_cart/models/menu/menu_item.dart';
+import 'package:fnb_menu_cart/utils/data_types/price.dart';
+import 'package:fnb_menu_cart/widgets/order/quantity_stepper.dart';
+
+/// One menu item. The card itself doesn't depend on the cart; only the
+/// [_CartControl] at the bottom rebuilds when this item's quantity changes.
+class MenuItemCard extends StatelessWidget {
+  final MenuItem menuItem;
+
+  const MenuItemCard({super.key, required this.menuItem});
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final bool isOutOfStock = menuItem.availability.isOutOfStock;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /* Section - Thumbnail */
+            // Faded when out of stock, so the item reads as unavailable.
+            Opacity(
+              opacity: isOutOfStock ? 0.4 : 1.0,
+              child: _Thumbnail(url: menuItem.thumbnailUrl),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  /* Section - Name and description */
+                  Opacity(
+                    opacity: isOutOfStock ? 0.6 : 1.0,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(menuItem.name, style: theme.textTheme.titleSmall),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          menuItem.description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  /* Section - Price, availability and cart control */
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              formatPrice(menuItem.priceInCents),
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: isOutOfStock
+                                    ? theme.colorScheme.onSurfaceVariant
+                                    : theme.colorScheme.primary,
+                                decoration: isOutOfStock
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
+                            ),
+                            _AvailabilityLabel(
+                              availability: menuItem.availability,
+                            ),
+                          ],
+                        ),
+                      ),
+                      _CartControl(menuItem: menuItem),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Thumbnail extends StatelessWidget {
+  final String? url;
+
+  const _Thumbnail({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    final Widget placeholder = Icon(
+      Icons.restaurant,
+      color: colorScheme.onSurfaceVariant,
+    );
+    // Decode at display size rather than full resolution, to save memory.
+    final int cacheSize =
+        (AppSizes.menuItemThumbnail * MediaQuery.devicePixelRatioOf(context))
+            .round();
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppBorderRadii.thumbnail),
+      child: Container(
+        color: colorScheme.surfaceContainerHighest,
+        height: AppSizes.menuItemThumbnail,
+        width: AppSizes.menuItemThumbnail,
+        child: url == null
+            ? placeholder
+            : Image.network(
+                url!,
+                cacheHeight: cacheSize,
+                cacheWidth: cacheSize,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => placeholder,
+              ),
+      ),
+    );
+  }
+}
+
+class _AvailabilityLabel extends StatelessWidget {
+  final MenuItemAvailability availability;
+
+  const _AvailabilityLabel({required this.availability});
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final (String label, Color color) = switch (availability) {
+      MenuItemAvailability.inStock => (
+        'In stock',
+        theme.colorScheme.onSurfaceVariant,
+      ),
+      MenuItemAvailability.lowStock => (
+        'Low stock',
+        theme.colorScheme.tertiary,
+      ),
+      MenuItemAvailability.outOfStock => (
+        'Out of stock',
+        theme.colorScheme.error,
+      ),
+    };
+
+    return Text(
+      label,
+      style: theme.textTheme.bodySmall?.copyWith(color: color),
+    );
+  }
+}
+
+/// "Add" button, or a quantity stepper once the item is in the cart.
+class _CartControl extends StatelessWidget {
+  final MenuItem menuItem;
+
+  const _CartControl({required this.menuItem});
+
+  @override
+  Widget build(BuildContext context) {
+    /* Section - BlocSelector for CartCubit */
+    // Selects only this item's quantity, so a change to another item doesn't
+    // rebuild this control.
+    return BlocSelector<CartCubit, CartState, int>(
+      selector: (state) => state.quantityOf(menuItem.id),
+      builder: (context, quantity) {
+        final CartCubit cartCubit = context.read<CartCubit>();
+        if (quantity == 0) {
+          return FilledButton.tonalIcon(
+            icon: const Icon(Icons.add),
+            label: const Text('Add'),
+            // Disabled, so out-of-stock items can't be added.
+            onPressed: menuItem.availability.isOutOfStock
+                ? null
+                : () => cartCubit.addItem(menuItem),
+          );
+        }
+        return QuantityStepper(
+          quantity: quantity,
+          onDecrement: () => cartCubit.decrementItem(menuItem.id),
+          onIncrement: () => cartCubit.addItem(menuItem),
+        );
+      },
+    );
+  }
+}
