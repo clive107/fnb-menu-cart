@@ -11,6 +11,7 @@ import 'package:fnb_menu_cart/services/app/api_client.dart';
 import 'package:fnb_menu_cart/services/menu/menu_service.dart';
 import 'package:fnb_menu_cart/services/order/order_service.dart';
 import 'package:fnb_menu_cart/utils/app/app_routes.dart';
+import 'package:fnb_menu_cart/utils/app/global_navigator.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 
@@ -79,6 +80,7 @@ class MyApp extends StatelessWidget {
             darkTheme: _buildTheme(Brightness.dark),
             debugShowCheckedModeBanner: false,
             initialRoute: AppRoutes.menu,
+            navigatorKey: globalNavigatorKey,
             routes: {
               /* Section - Menu screen */
               AppRoutes.menu: (context) => const MenuScreen(),
