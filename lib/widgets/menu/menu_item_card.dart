@@ -6,6 +6,7 @@ import 'package:fnb_menu_cart/configs/themes/styles.dart';
 import 'package:fnb_menu_cart/enums/menu/menu_item_availability.dart';
 import 'package:fnb_menu_cart/models/menu/menu_item.dart';
 import 'package:fnb_menu_cart/utils/data_types/price.dart';
+import 'package:fnb_menu_cart/widgets/menu/menu_item_thumbnail.dart';
 import 'package:fnb_menu_cart/widgets/order/quantity_stepper.dart';
 
 /// One menu item. The card itself doesn't depend on the cart; only the
@@ -30,7 +31,10 @@ class MenuItemCard extends StatelessWidget {
             // Faded when out of stock, so the item reads as unavailable.
             Opacity(
               opacity: isOutOfStock ? 0.4 : 1.0,
-              child: _Thumbnail(url: menuItem.thumbnailUrl),
+              child: MenuItemThumbnail(
+                size: AppSizes.menuItemThumbnail,
+                url: menuItem.thumbnailUrl,
+              ),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
@@ -89,43 +93,6 @@ class MenuItemCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _Thumbnail extends StatelessWidget {
-  final String? url;
-
-  const _Thumbnail({required this.url});
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colorScheme = Theme.of(context).colorScheme;
-    final Widget placeholder = Icon(
-      Icons.restaurant,
-      color: colorScheme.onSurfaceVariant,
-    );
-    // Decode at display size rather than full resolution, to save memory.
-    final int cacheSize =
-        (AppSizes.menuItemThumbnail * MediaQuery.devicePixelRatioOf(context))
-            .round();
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppBorderRadii.thumbnail),
-      child: Container(
-        color: colorScheme.surfaceContainerHighest,
-        height: AppSizes.menuItemThumbnail,
-        width: AppSizes.menuItemThumbnail,
-        child: url == null
-            ? placeholder
-            : Image.network(
-                url!,
-                cacheHeight: cacheSize,
-                cacheWidth: cacheSize,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => placeholder,
-              ),
       ),
     );
   }
