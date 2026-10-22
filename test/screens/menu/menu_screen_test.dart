@@ -102,6 +102,39 @@ void main() {
     expect(topOf('Beverages'), lessThan(topOf('Nescafe Coffee')));
   });
 
+  testWidgets('Keeps the category header pinned while its items scroll.', (
+    tester,
+  ) async {
+    // Enough fruits to scroll well within the Fruits section.
+    final Map<String, dynamic> longResponse = {
+      'products': [
+        for (int id = 1; id <= 10; id++)
+          {
+            'id': id,
+            'title': 'Fruit $id',
+            'description': 'Fresh fruit',
+            'price': 1.99,
+            'stock': 8,
+            'availabilityStatus': 'In Stock',
+            'tags': ['fruits'],
+          },
+      ],
+    };
+    when(
+      () => mockMenuService.getMenuItemList(),
+    ).thenAnswer((_) async => longResponse);
+
+    await pumpMenuScreen(tester);
+    await tester.pumpAndSettle();
+    final double headerTopBefore = tester.getTopLeft(find.text('Fruits')).dy;
+    await tester.drag(find.byType(CustomScrollView), const Offset(0.0, -300.0));
+    await tester.pumpAndSettle();
+
+    // The items moved up, but the header stayed where it was.
+    expect(find.text('Fruit 1'), findsNothing);
+    expect(tester.getTopLeft(find.text('Fruits')).dy, headerTopBefore);
+  });
+
   testWidgets('Adding an item shows its quantity and the cart badge.', (
     tester,
   ) async {
