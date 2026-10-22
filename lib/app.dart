@@ -12,6 +12,7 @@ import 'package:fnb_menu_cart/services/menu/menu_service.dart';
 import 'package:fnb_menu_cart/services/order/order_service.dart';
 import 'package:fnb_menu_cart/utils/app/app_routes.dart';
 import 'package:fnb_menu_cart/utils/app/global_navigator.dart';
+import 'package:fnb_menu_cart/widgets/order/order_placed_dialog.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 
@@ -68,14 +69,33 @@ class MyApp extends StatelessWidget {
           ),
         ],
         /* Section - BlocListener for CheckoutBloc */
-        // Clears the cart once an order succeeds. It sits here rather than on
-        // the cart screen so it still runs if the user has left that screen
-        // before the response arrives.
+        // When an order succeeds: clears the cart and confirms with a dialog.
+        // It sits here rather than on the cart screen so it still runs if the
+        // user has left that screen before the response arrives.
         child: BlocListener<CheckoutBloc, CheckoutState>(
           listenWhen: (previous, current) =>
               previous.placeOrderStatus != current.placeOrderStatus &&
               current.placeOrderStatus.isSuccess,
-          listener: (context, state) => context.read<CartCubit>().clearCart(),
+          listener: (context, state) async {
+            context.read<CartCubit>().clearCart();
+            // This context is above MaterialApp, so the dialog goes through
+            // the navigator key and appears on whichever screen is open.
+            final BuildContext? navigatorContext =
+                globalNavigatorKey.currentContext;
+            if (navigatorContext == null) {
+              return;
+            }
+            final CheckoutBloc checkoutBloc = context.read<CheckoutBloc>();
+            await showOrderPlacedDialog(
+              context: navigatorContext,
+              orderId: state.orderId,
+            );
+            // Back to the menu, and checkout back to idle for the next order.
+            globalNavigatorKey.currentState?.popUntil(
+              (Route<dynamic> route) => route.isFirst,
+            );
+            checkoutBloc.add(const ResetCheckout());
+          },
           child: MaterialApp(
             darkTheme: _buildTheme(Brightness.dark),
             debugShowCheckedModeBanner: false,
