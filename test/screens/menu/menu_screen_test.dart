@@ -47,7 +47,9 @@ void main() {
   // order the cards are listed in.
   Finder addButtonOn(String name) => find.descendant(
     of: find.widgetWithText(Card, name),
-    matching: find.widgetWithText(FilledButton, 'Add'),
+    // By subtype: on Flutter 3.38, FilledButton.tonalIcon builds a private
+    // FilledButton subclass, which an exact-type finder doesn't match.
+    matching: find.bySubtype<FilledButton>(),
   );
 
   Future<void> pumpMenuScreen(WidgetTester tester) async {
