@@ -59,6 +59,11 @@ void main() {
       },
     );
 
+    test('quantityByItemId maps each item ID to its quantity.', () {
+      expect(fakeState.quantityByItemId, {16: 2, 29: 1});
+      expect(const CartState(cartItemsById: {}).quantityByItemId, isEmpty);
+    });
+
     test('cartItemList returns the items in the order they were added.', () {
       expect(fakeState.cartItemList, const [
         CartItem(menuItem: fakeApple, quantity: 2),

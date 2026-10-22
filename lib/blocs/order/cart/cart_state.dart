@@ -25,6 +25,12 @@ class CartState extends Equatable {
 
   int quantityOf(int menuItemId) => cartItemsById[menuItemId]?.quantity ?? 0;
 
+  /// Quantity per menu item ID, the shape an order request needs.
+  Map<int, int> get quantityByItemId => {
+    for (final CartItem cartItem in cartItemsById.values)
+      cartItem.menuItem.id: cartItem.quantity,
+  };
+
   @override
   List<Object?> get props => [cartItemsById];
 }
