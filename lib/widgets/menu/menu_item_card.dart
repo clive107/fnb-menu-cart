@@ -175,20 +175,26 @@ class _CartControl extends StatelessWidget {
       selector: (state) => state.quantityOf(menuItem.id),
       builder: (context, quantity) {
         final CartCubit cartCubit = context.read<CartCubit>();
-        if (quantity == 0) {
-          return FilledButton.tonalIcon(
-            icon: const Icon(Icons.add),
-            label: const Text('Add'),
-            // Disabled, so out-of-stock items can't be added.
-            onPressed: menuItem.availability.isOutOfStock
-                ? null
-                : () => cartCubit.addItem(menuItem),
-          );
-        }
-        return QuantityStepper(
-          quantity: quantity,
-          onDecrement: () => cartCubit.decrementItem(menuItem.id),
-          onIncrement: () => cartCubit.addItem(menuItem),
+        // Fixed height: the Add button is taller than the stepper, so without
+        // it the card would shrink when one replaces the other.
+        return SizedBox(
+          height: AppSizes.buttonHeight,
+          child: Center(
+            child: quantity == 0
+                ? FilledButton.tonalIcon(
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add'),
+                    // Disabled, so out-of-stock items can't be added.
+                    onPressed: menuItem.availability.isOutOfStock
+                        ? null
+                        : () => cartCubit.addItem(menuItem),
+                  )
+                : QuantityStepper(
+                    quantity: quantity,
+                    onDecrement: () => cartCubit.decrementItem(menuItem.id),
+                    onIncrement: () => cartCubit.addItem(menuItem),
+                  ),
+          ),
         );
       },
     );

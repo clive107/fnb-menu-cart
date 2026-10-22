@@ -119,6 +119,23 @@ void main() {
     expect(find.byTooltip('Cart, 1 item'), findsOneWidget);
   });
 
+  testWidgets('The card keeps its height when Add turns into the stepper.', (
+    tester,
+  ) async {
+    when(
+      () => mockMenuService.getMenuItemList(),
+    ).thenAnswer((_) async => fakeResponse);
+
+    await pumpMenuScreen(tester);
+    await tester.pumpAndSettle();
+    final Finder appleCard = find.widgetWithText(Card, 'Apple');
+    final double heightBefore = tester.getSize(appleCard).height;
+    await tester.tap(addButtonOn('Apple'));
+    await tester.pump();
+
+    expect(tester.getSize(appleCard).height, heightBefore);
+  });
+
   testWidgets('Out-of-stock items look distinct and cannot be added.', (
     tester,
   ) async {
