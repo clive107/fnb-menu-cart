@@ -5,6 +5,7 @@ import 'package:fnb_menu_cart/configs/themes/styles.dart';
 import 'package:fnb_menu_cart/screens/cart/cart_screen.dart';
 import 'package:fnb_menu_cart/screens/menu/menu_screen.dart';
 import 'package:fnb_menu_cart/services/app/api_client.dart';
+import 'package:fnb_menu_cart/services/menu/menu_service.dart';
 import 'package:fnb_menu_cart/utils/app/app_routes.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
@@ -33,6 +34,9 @@ class MyApp extends StatelessWidget {
       providers: [
         RepositoryProvider<Logger>.value(value: logger),
         RepositoryProvider<ApiClient>.value(value: apiClient),
+        RepositoryProvider<MenuService>(
+          create: (context) => MenuService(apiClient: apiClient),
+        ),
       ],
       child: MaterialApp(
         darkTheme: _buildTheme(Brightness.dark),
