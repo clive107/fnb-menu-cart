@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fnb_menu_cart/blocs/menu/menu_item_list/menu_item_list_bloc.dart';
+import 'package:fnb_menu_cart/blocs/order/cart/cart_cubit.dart';
+import 'package:fnb_menu_cart/blocs/order/checkout/checkout_bloc.dart';
 import 'package:fnb_menu_cart/configs/themes/app_colors.dart';
 import 'package:fnb_menu_cart/configs/themes/styles.dart';
 import 'package:fnb_menu_cart/screens/cart/cart_screen.dart';
 import 'package:fnb_menu_cart/screens/menu/menu_screen.dart';
 import 'package:fnb_menu_cart/services/app/api_client.dart';
+import 'package:fnb_menu_cart/services/menu/menu_service.dart';
+import 'package:fnb_menu_cart/services/order/order_service.dart';
 import 'package:fnb_menu_cart/utils/app/app_routes.dart';
+import 'package:fnb_menu_cart/utils/app/error_handling/get_failure_message.dart';
+import 'package:fnb_menu_cart/utils/app/global_navigator.dart';
+import 'package:fnb_menu_cart/widgets/order/order_placed_dialog.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 
@@ -33,22 +41,109 @@ class MyApp extends StatelessWidget {
       providers: [
         RepositoryProvider<Logger>.value(value: logger),
         RepositoryProvider<ApiClient>.value(value: apiClient),
+        RepositoryProvider<MenuService>(
+          create: (context) => MenuService(apiClient: apiClient),
+        ),
+        RepositoryProvider<OrderService>(
+          create: (context) => OrderService(apiClient: apiClient),
+        ),
       ],
-      child: MaterialApp(
-        darkTheme: _buildTheme(Brightness.dark),
-        debugShowCheckedModeBanner: false,
-        initialRoute: AppRoutes.menu,
-        routes: {
-          /* Section - Menu screen */
-          AppRoutes.menu: (context) => const MenuScreen(),
-          /* Section - Cart screen */
-          AppRoutes.cart: (context) => const CartScreen(),
-        },
-        theme: _buildTheme(Brightness.light),
-        // Follows the device setting, so switching dark mode on the device
-        // switches the app's theme.
-        themeMode: ThemeMode.system,
-        title: 'F&B Menu',
+      /* Section - MultiBlocProvider */
+      // Above MaterialApp, so the menu, cart and an order in flight survive
+      // navigation, rotation and theme changes.
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<MenuItemListBloc>(
+            create: (context) => MenuItemListBloc(
+              logger: context.read<Logger>(),
+              menuService: context.read<MenuService>(),
+            )..add(const GetMenuItemList()),
+          ),
+          BlocProvider<CartCubit>(
+            create: (context) => CartCubit(logger: context.read<Logger>()),
+          ),
+          BlocProvider<CheckoutBloc>(
+            create: (context) => CheckoutBloc(
+              logger: context.read<Logger>(),
+              orderService: context.read<OrderService>(),
+            ),
+          ),
+        ],
+        /* Section - MultiBlocListener */
+        // The order's outcome is handled here rather than on the cart screen,
+        // so it's still shown if the user has left that screen before the
+        // response arrives.
+        child: MultiBlocListener(
+          listeners: [
+            /* Section - BlocListener for CheckoutBloc */
+            // Success: clears the cart and confirms with a dialog.
+            BlocListener<CheckoutBloc, CheckoutState>(
+              listenWhen: (previous, current) =>
+                  previous.placeOrderStatus != current.placeOrderStatus &&
+                  current.placeOrderStatus.isSuccess,
+              listener: (context, state) async {
+                context.read<CartCubit>().clearCart();
+                // This context is above MaterialApp, so the dialog goes
+                // through the navigator key and appears on whichever screen
+                // is open.
+                final BuildContext? navigatorContext =
+                    globalNavigatorKey.currentContext;
+                if (navigatorContext == null) {
+                  return;
+                }
+                final CheckoutBloc checkoutBloc = context.read<CheckoutBloc>();
+                await showOrderPlacedDialog(
+                  context: navigatorContext,
+                  orderId: state.orderId,
+                );
+                // Back to the menu, and checkout back to idle for the next
+                // order.
+                globalNavigatorKey.currentState?.popUntil(
+                  (Route<dynamic> route) => route.isFirst,
+                );
+                checkoutBloc.add(const ResetCheckout());
+              },
+            ),
+            /* Section - BlocListener for CheckoutBloc */
+            // Failure: a snackbar through the messenger key, on whichever
+            // screen is open. The cart is kept.
+            BlocListener<CheckoutBloc, CheckoutState>(
+              listenWhen: (previous, current) =>
+                  previous.placeOrderStatus != current.placeOrderStatus &&
+                  current.placeOrderStatus.isFailure,
+              listener: (context, state) =>
+                  globalScaffoldMessengerKey.currentState
+                    ?..hideCurrentSnackBar()
+                    // No action: it disappears after 4s, and Place Order is the
+                    // retry.
+                    ..showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          getFailureMessage(failure: state.placeOrderFailure),
+                        ),
+                      ),
+                    ),
+            ),
+          ],
+          child: MaterialApp(
+            darkTheme: _buildTheme(Brightness.dark),
+            debugShowCheckedModeBanner: false,
+            initialRoute: AppRoutes.menu,
+            navigatorKey: globalNavigatorKey,
+            routes: {
+              /* Section - Menu screen */
+              AppRoutes.menu: (context) => const MenuScreen(),
+              /* Section - Cart screen */
+              AppRoutes.cart: (context) => const CartScreen(),
+            },
+            scaffoldMessengerKey: globalScaffoldMessengerKey,
+            theme: _buildTheme(Brightness.light),
+            // Follows the device setting, so switching dark mode on the device
+            // switches the app's theme.
+            themeMode: ThemeMode.system,
+            title: 'F&B Menu',
+          ),
+        ),
       ),
     );
   }
